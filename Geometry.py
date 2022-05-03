@@ -13,8 +13,8 @@ class Point:
 		self.y = y
 
 	def generate_variant(self, mutation_rate: float):
-		x = self.x + random.uniform(-1, 1)*mutation_rate
-		y = self.y + random.uniform(-1, 1)*mutation_rate
+		x = self.x + random.uniform(-1, 1)*mutation_rate/10
+		y = self.y + random.uniform(-1, 1)*mutation_rate/10
 		
 		return Point(x, y)
 
@@ -29,19 +29,24 @@ class Color:
 		self.r = r
 		self.g = g
 		self.b = b
+		self.a = 0.3
 
 
 	def __eq__(self, other):
 		return math.isclose(self.r, other.r) and math.isclose(self.g, other.g) and math.isclose(self.b, other.b)
 
 	@classmethod
-	def generate_random(cls):
+	def generate_random(cls, image = None):
+		if image is not None:
+			image_size = (image.shape[0], image.shape[1])
+			pixel = image[random.randrange(0, image_size[0]), random.randrange(0, image_size[1])]/255
+			return cls(pixel[0], pixel[1], pixel[2])
 		return cls(random.random(), random.random(), random.random())
 
 
 class Polygon:
 	def __init__(self, points: List[Point], color: Color):
-		self.points = points
+		self.points = points[0:3]
 		self.color = color
 
 	def generate_variant(self, mutation_rate: float):
@@ -54,7 +59,7 @@ class Polygon:
 		# Randomly remove a point
 		if len(self.points) > 3:
 			if random.random() < mutation_rate:
-				points = points.remove(random.choice(points))
+				points.remove(random.choice(points))
 
 
 		# Randomly add a new point
@@ -72,15 +77,15 @@ class Polygon:
 
 
 	@classmethod
-	def generate_random(cls):
-		num_points = random.randrange(4) + 3
+	def generate_random(cls, image = None):
+		num_points = random.randrange(10) + 3
 
 		points = []
 		for _ in range(num_points):
 			p = Point.generate_random()
 			points.append(p)
 
-		color = Color.generate_random()
+		color = Color.generate_random(image)
 
 		return cls(points, color)
 

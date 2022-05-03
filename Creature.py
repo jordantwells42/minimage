@@ -5,9 +5,11 @@ from pathlib import	 Path
 import numpy as np
 import matplotlib.pyplot as plt
 import imageio.v3 as iio
+import matplotlib
+matplotlib.use("Agg")
 
 
-from Geometry import Point, Polygon
+from Geometry import Point, Polygon, Color
 
 
 class Creature:
@@ -32,34 +34,26 @@ class Creature:
 
 
 		complexity = (num_polygons*num_colors*num_points)
-		print(complexity)
 		return complexity**(1/LOD)
 
 	def calculate_error(self, img):
 		err = 0
 
 		c_img = self.get_image(size = (img.shape[0], img.shape[1]))
+		c_img = c_img/255
+		img = img/255
 
-		for i, j in zip(c_img, img):
-			for c_pixel, i_pixel in zip(i, j):
-				red_err = (c_pixel[0]/255 - i_pixel[0]/255)**2
-				green_err = (c_pixel[1]/255 - i_pixel[1]/255)**2
-				blue_err = (c_pixel[2]/255 - i_pixel[2]/255)**2
-
-				print(c_pixel, i_pixel)
-				print(red_err, green_err, blue_err)
-
-				err += red_err + green_err + blue_err
+		diff = abs(c_img - img)
+		err = np.sum(diff)
 
 		return err
 
-
 	def calculate_fitness(self, image, LOD: int = 1):
-		self.fitness = 1/(self.calculate_error(image)*self.calculate_complexity(LOD))
+		self.fitness = 1/(self.calculate_error(image)**4)/(self.calculate_complexity(LOD)**0.1)
 		return self.fitness
 
 
-	def generate_variant(self, mutation_rate):
+	def generate_variant(self, mutation_rate, image = None):
 		polygons = []
 		colors = []
 
@@ -70,31 +64,34 @@ class Creature:
 			colors.append(polygon.color)
 
 
-		# Randomly remove a polygon
-		if len(self.polygons) > 2:
+		
+		for _ in range(4):
+			# Randomly remove a polygon
+			if len(polygons) > 2:
+				if random.random() < mutation_rate:
+					polygons.remove(random.choice(polygons))
+
+			# Randomly add a new polygon
 			if random.random() < mutation_rate:
-				polygons.remove(random.choice(polygons))
 
-		# Randomly add a new polygon
-		if random.random() < mutation_rate:
+				random_polygon = Polygon.generate_random(image)
 
-			random_polygon = Polygon.generate_random()
+				# Choose either from existing colors or new color
+				if random.random() < 0.5:
+					color = random.choice(colors)
+				else:
+					color = Color.generate_random()
 
-			# Choose either from existing colors or new color
-			if random.random() < 0.5:
-				color = random.choice(colors)
-			else:
-				color = Color.generate_random()
+				random_polygon.color = color
 
-			random_polygon.color = color
+				polygons.append(random_polygon)
 
-			polygons.append(random_polygon)
 
 
 
 		return Creature(polygons)
 
-	def generate_offspring(self, other: Creature, mutation_rate):
+	def generate_offspring_half(self, other, mutation_rate: float):
 		polygons = []
 
 		self_polygons = self.polygons.copy()
@@ -105,18 +102,42 @@ class Creature:
 		for _ in range(len(other.polygons)//2):
 			other_polygons.remove(random.choice(other_polygons))
 
+
+			
+
+
 		polygons += self_polygons + other_polygons
+
+		if len(polygons) > 2:
+			polygons.remove(random.choice(polygons))
+		if len(polygons) > 2:
+			polygons.remove(random.choice(polygons))
+
 		random.shuffle(polygons)
 
-		offspring = Creature(polygons).generate_variant(mutation_rate)
+		offspring = Creature(polygons)
+		return offspring
+
+
+	def generate_offspring_most(self, other, mutation_rate: float):
+		polygons =  self.polygons.copy()
+
+
+		if len(polygons) > 2:
+			polygons.remove(random.choice(polygons))
+		if len(polygons) > 2:
+			polygons.remove(random.choice(polygons))
+
+		polygons.append(random.choice(other.polygons))
+		polygons.append(random.choice(other.polygons))
+		
+		random.shuffle(polygons)
+
+		offspring = Creature(polygons)
+		return offspring
 
 
 	def draw(self, size: Tuple[int]):
-		self.get_image(size)
-		plt.show()
-
-
-	def get_image(self, size):
 		fig, ax = plt.subplots()
 		ax.axis('off')
 		fig.tight_layout(pad=0)
@@ -138,18 +159,48 @@ class Creature:
 			plt.fill(xs, ys, facecolor=color, edgecolor=color)
 
 		fig.canvas.draw()
+		plt.show(block=False)
+		plt.close('all')
+
+
+	def get_image(self, size):
+		fig, ax = plt.subplots()
+		ax.axis('off')
+		fig.tight_layout(pad=0)
+		fig.set_size_inches(size[1]/100,  size[0]/100, forward=True)
+		fig.set_dpi(100)
+
+		# To remove the huge white borders
+		ax.margins(0)
+		for polygon in self.polygons:
+			xs = []
+			ys = []
+
+			for point in polygon.points:
+				xs.append(point.x)
+				ys.append(point.y)
+
+			color = (polygon.color.r, polygon.color.g, polygon.color.b, polygon.color.a)
+
+			plt.fill(xs, ys, facecolor=color, edgecolor=color)
+
+		fig.canvas.draw()
 		image_from_plot = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
 		image_from_plot = image_from_plot.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+		plt.close('all')
+		del fig
 		return image_from_plot
 
 	@classmethod
-	def generate_random(cls):
-		num_polygons = random.randrange(3) + 1
+	def generate_random(cls, image = None):
+		num_polygons = random.randrange(12) + 1
 
 		polygons = []
+
 		for _ in range(num_polygons):
-			polygon = Polygon.generate_random()
+			polygon = Polygon.generate_random(image)
 			polygons.append(polygon)
+
 
 		return cls(polygons)
 
