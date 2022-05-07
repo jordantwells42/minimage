@@ -35,3 +35,11 @@ Crossover involves taking part of the polygons from one image and combining them
 
 With the new generation, I repeat the same steps, hoping for fitter creatures to "survive" and reproduce!
  
+
+## Limitations and Extensions
+
+Currently, the fitness evaluation does not differentiate between an image that was achieved with few polygons or one that was achieved with many
+
+I attempted to add a "complexity" score that rewarded images for being made of fewer polygons, but had trouble implementing it
+
+It would be interesting to implement this feature correctly and get accurate images in as few polygons as possible
