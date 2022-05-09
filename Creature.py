@@ -127,13 +127,33 @@ class Creature:
 		return offspring
 
 
-	def draw(self, size: Tuple[int]):
+	def reduce_complexity(self, image, LOD):
+		kept = []
+		base_fitness = self.calculate_fitness(image, LOD)
+
+		for polygon in self.polygons:
+			all_other_polygons = self.polygons.copy()
+			all_other_polygons.remove(polygon)
+
+			simpler_creature = Creature(all_other_polygons)
+			simpler_fitness = simpler_creature.calculate_fitness(image, LOD)
+
+			if base_fitness > simpler_fitness:
+				kept.append(polygon)
+
+		if len(self.polygons) != len(kept):
+			print(f"Removed {len(self.polygons) - len(kept)}/{len(self.polygons)} polygons")
+
+		self.polygons = kept
+
+
+	def save(self, name, size: Tuple[int]):
 		fig, ax = plt.subplots()
 		ax.axis('off')
-		grayness = 0
+		grayness = 128
 		fig.tight_layout(pad=0)
-		fig.set_size_inches(size[1]/20,  size[0]/20, forward=True)
-		fig.set_dpi(300)
+		fig.set_size_inches(2*size[1]/100,  2*size[0]/100, forward=True)
+		fig.set_dpi(100)
 		plt.fill([0, 0, 1, 1], [0, 1, 1, 0], facecolor=(grayness/255, grayness/255, grayness/255, 1))
 		# To remove the huge white borders
 		ax.margins(0)
@@ -151,13 +171,14 @@ class Creature:
 		
 
 		fig.canvas.draw()
-		plt.show(block=False)
+		#plt.show(block=False)
+		plt.savefig(name + ".svg", format="svg")
 		plt.close('all')
 
 
 	def get_image(self, size):
 		fig, ax = plt.subplots()
-		grayness = 0
+		grayness = 128
 		ax.axis('off')
 		fig.tight_layout(pad=0)
 		fig.set_size_inches(size[1]/100,  size[0]/100, forward=True)
@@ -210,7 +231,6 @@ if __name__ == "__main__":
 	creature = Creature([red_triangle])
 	creature.draw()
 	"""
-
 
 	im = iio.imread('eddy.jpg')
 

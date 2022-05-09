@@ -54,7 +54,9 @@ class Generation:
 			creature.calculate_fitness(image, LOD)
 		self.creatures = sorted(self.creatures, key = lambda x: x.fitness, reverse = True)
 
-
+	def reduce_complexity(self, image, LOD):
+		for creature in tqdm(self.creatures):
+			creature.reduce_complexity(image, LOD)
 
 	def select(self, quota: int):
 		return self.creatures[:quota]
@@ -73,74 +75,87 @@ class Generation:
 
 	def save_best(self, name: str, size: Tuple[int], run_dir: Path):
 		creature = self.get_best()
-		c_img = creature.get_image(size)
-		iio.imwrite(run_dir / (name + ".png"), c_img)
+		creature.save(str(run_dir / name), size)
 
 
 if __name__ == "__main__":
-	quota = 3
-	image = iio.imread('poland-small.jpg')
-	size = (image.shape[0], image.shape[1])
-	LOD = 50
-	mutation_rate = 0.01
-	rounds = 10000000
-	run_dir = Path("./runs/poland")
-	run_dir.mkdir(0o774, parents=True, exist_ok=True)
+	import pymp
+	images = ['images/hxh.jpg', "images/pearl-small.jpg",
+		"images/turtle.jpg", "images/eddy-head-small.png"]
 
-	print("Generating first generation")
-	name = "poland"
-
-	if False:
-		g1 = Generation.generate_first_generation(quota)
-
-		g = g1
-
-		
-		for i in range(rounds):
-			print("Calculating Fitness of Generation")
-			g.calculate_fitness(image, LOD)
-
-			print("Displaying best fitness:", end = " ")
-			g.print_best_worst()
-
-			if i % 100 == 0:
-				g.save_best(str(i), size, run_dir)
-				c = g.get_best()
-				pickle.dump(c, open(f"{name}.p", "wb" ) )
-
-			print("Selecting creatures to survive")
-			selected_creatures = g.select(quota)
-			print(len(selected_creatures))
-			print(f"Generating new generation: {i}")
-			g = Generation(selected_creatures, mutation_rate)
-			
-		plt.show()
-		
-	else:
-
-		c1 = Creature.generate_random()
-		c1.calculate_fitness(image, LOD)
-		f1 = c1.fitness
+	names = ["hxh", "pearl", "turtle", "edison"]
 
 
-		for i in range(rounds):
-
-			c2 = c1.generate_variant(mutation_rate, image)
-			c2.calculate_fitness(image, LOD)
-
-			f2 = c2.fitness
+	with pymp.Parallel(4) as p:
+		for idx in p.range(len(images)):
+			image = images[idx]
+			name = names[idx]
 
 
-			if f2 > f1:
-				c1 = c2
-				f1 = f2
-				print(f2)
+			quota = 3
+			image = iio.imread(image)
+			size = (image.shape[0], image.shape[1])
+			LOD = 50
+			mutation_rate = 0.01
+			rounds = 10000000
+			run_dir = Path(f"./examples/{name}")
+			run_dir.mkdir(0o774, parents=True, exist_ok=True)
+
+			p.print(f"Thread {p.thread_num:3d} - Generating first generation")
+			name = f"backups/{name}"
+
+			if False:
+				g1 = Generation.generate_first_generation(quota)
+
+				g = g1
+
+				
+				for i in range(rounds):
+					print("Calculating Fitness of Generation")
+					g.calculate_fitness(image, LOD)
+
+					print("Displaying best fitness:", end = " ")
+					g.print_best_worst()
+
+					if i % 100 == 0:
+						g.save_best(str(i), size, run_dir)
+						c = g.get_best()
+						pickle.dump(c, open(f"{name}.pkl", "wb" ) )
+
+					print("Selecting creatures to survive")
+					selected_creatures = g.select(quota)
+					print(len(selected_creatures))
+					print(f"Generating new generation: {i}")
+					g = Generation(selected_creatures, mutation_rate)
+					
+				plt.show()
+				
+			else:
+
+				c1 = Creature.generate_random()
+				c1.calculate_fitness(image, LOD)
+				f1 = c1.fitness
 
 
-			if i % 100 == 0:
-				c_img = c1.get_image(size)
-				iio.imwrite(run_dir / (str(i) + ".png"), c_img)
-				pickle.dump(c1, open(f"{name}.p", "wb" ) )
+				for i in range(rounds):
+
+					c2 = c1.generate_variant(mutation_rate, image)
+					c2.calculate_fitness(image, LOD)
+
+					f2 = c2.fitness
+
+
+					if f2 > f1:
+						c1 = c2
+						f1 = f2
+						print(f2)
+
+
+					if i % 100 == 0:
+						c1.save(str(run_dir / str(i)), size, )
+						pickle.dump(c1, open(f"{name}.pkl", "wb" ))
+
+
 
 
 
