@@ -3,9 +3,16 @@
  
  ## Examples
  
- To be added!
+
+
+ ![191500](https://user-images.githubusercontent.com/8213365/177219120-0668d825-b019-4693-b1ce-d75ec90e0940.svg)
  
- 
+ ![287100](https://user-images.githubusercontent.com/8213365/177219132-14584709-fff5-44d9-a038-1f6b8bf968be.svg)
+
+![208800](https://user-images.githubusercontent.com/8213365/177219144-ea60d120-abde-4e2b-9c80-2f4a3b184cc4.svg)
+
+ ![268400](https://user-images.githubusercontent.com/8213365/177219158-64561323-35ff-4e2b-8600-df6193afb101.svg)
+
  
  ## How it works
  
